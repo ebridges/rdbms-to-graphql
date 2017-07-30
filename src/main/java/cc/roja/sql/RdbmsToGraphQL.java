@@ -1,5 +1,7 @@
 package cc.roja.sql;
 
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import org.docopt.Docopt;
 import org.slf4j.Logger;
@@ -13,21 +15,82 @@ public class RdbmsToGraphQL {
       "RDBMS to GraphQL.\n"
           + "\n"
           + "Usage:\n"
-          + "  rdbms2graphql generate --jdbc-url=<JDBC_URL> --username=<USERNAME> --password=<PASSWORD>\n"
+          + "  rdbms2graphql generate --jdbc-url=<JDBC_URL> --jdbc-driver=<JDBC_DRIVER> --username=<USERNAME> --password=<PASSWORD> [--schema=<SCHEMA>] [--tables=<TABLES>] [--output-dir=<OUTPUT>] [--verbose]\n"
+          + "  rdbms2graphql --version\n"
+          + "  rdbms2graphql [-h|--help]\n"
           + "\n"
           + "Options:\n"
-          + "  -h --help             Show this screen.\n"
-          + "  --version             Show version.\n"
-          + "  --jdbc-url=<JDBC_URL> DB JDBC URL.\n"
-          + "  --username=<USERNAME> DB Username.\n"
-          + "  --password=<PASSWORD> DB Password.\n"
-          + "  --output-dir=<OUTPUT> Output directory [default: ./generated-schema]."
+          + "  -h --help                   Show this screen.\n"
+          + "  --version                   Show version.\n"
+          + "  --verbose                   Verbose logging.\n"
+          + "  --jdbc-url=<JDBC_URL>       DB JDBC URL.\n"
+          + "  --jdbc-driver=<JDBC_DRIVER> FQCN of driver class.\n"
+          + "  --username=<USERNAME>       DB Username.\n"
+          + "  --password=<PASSWORD>       DB Password.\n"
+          + "  --output-dir=<OUTPUT>       Output directory [default: ./generated-schema].\n"
+          + "  --schema=<SCHEMA>           Output directory [default: '%'].\n"
+          + "  --tables=<TABLES>           CSV list of tables to include [default: '%'].\n"
           + "\n";
 
   public static void main(String[] args) {
     Map<String, Object> opts = new Docopt(DOC)
         .withVersion(VERSION)
         .parse(args);
-    LOGGER.info(opts.toString());
+
+    if(hasOpt(opts, "verbose")) {
+      configureVerboseLogging();
+    }
+
+    LOGGER.debug(opts.toString());
+
+    String[] includedTables = initializeIncludedTables(opts);
+
+    try(JDBCConfig config = initializeDbConfig(opts)) {
+      List<String> tables = config.listTables(getOpt(opts, "schema"), includedTables);
+      for(String table : tables) {
+        LOGGER.info("table: "+table);
+      }
+    }
+  }
+
+  private static String[] initializeIncludedTables(Map<String, Object> opts) {
+    String tableCsv = getOpt(opts, "tables");
+    if(tableCsv.equals("%")) {
+      return new String[]{};
+    } else {
+      return tableCsv.split("\\s*,\\s*");
+    }
+  }
+
+  private static JDBCConfig initializeDbConfig(Map<String, Object> opts) {
+    String jdbcUrl = getOpt(opts, "jdbc-url");
+    String driver = getOpt(opts, "jdbc-driver");
+    String username = getOpt(opts, "username");
+    String password = getOpt(opts, "password");
+
+    JDBCConfig config = null;
+    try {
+      config = new JDBCConfig(jdbcUrl, driver, username, password);
+    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | SQLException e) {
+      LOGGER.error("unable to configure database metadata.", e);
+    }
+    return config;
+  }
+
+  private static boolean hasOpt(Map<String, Object> opts, String arg) {
+    return opts.containsKey("--"+arg);
+  }
+
+  private static String getOpt(Map<String, Object> opts, String arg) {
+    Object o = opts.get("--"+arg);
+    if(o != null) {
+      return o.toString();
+    }
+    throw new IllegalArgumentException("No param found for arg: "+arg);
+  }
+
+  private static void configureVerboseLogging() {
+    ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    root.setLevel(ch.qos.logback.classic.Level.DEBUG);
   }
 }
