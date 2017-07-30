@@ -1,0 +1,14 @@
+# Created by .ignore support plugin (hsz.mobi)
+### Java template
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Package Files #
+*.zip
+*.tar.gz
+
+gradlew.bat
+.gradle/
