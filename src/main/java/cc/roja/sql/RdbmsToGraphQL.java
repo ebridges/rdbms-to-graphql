@@ -7,6 +7,8 @@ import org.docopt.Docopt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cc.roja.sql.model.Entity;
+
 public class RdbmsToGraphQL {
   private static final Logger LOGGER = LoggerFactory.getLogger(RdbmsToGraphQL.class);
 
@@ -32,7 +34,7 @@ public class RdbmsToGraphQL {
           + "  --tables=<TABLES>           CSV list of tables to include [default: '%'].\n"
           + "\n";
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     Map<String, Object> opts = new Docopt(DOC)
         .withVersion(VERSION)
         .parse(args);
@@ -44,12 +46,10 @@ public class RdbmsToGraphQL {
     LOGGER.debug(opts.toString());
 
     String[] includedTables = initializeIncludedTables(opts);
-
-    try(JDBCConfig config = initializeDbConfig(opts)) {
-      List<String> tables = config.listTables(getOpt(opts, "schema"), includedTables);
-      for(String table : tables) {
-        LOGGER.info("table: "+table);
-      }
+    List<Entity> entities;
+    try(DatabaseAnalyzer analyzer = initializeDatabaseAnalyzer(opts)) {
+      entities = analyzer.initializeEntities(includedTables);
+      LOGGER.info("entities: "+ entities);
     }
   }
 
@@ -62,23 +62,33 @@ public class RdbmsToGraphQL {
     }
   }
 
-  private static JDBCConfig initializeDbConfig(Map<String, Object> opts) {
+  private static DatabaseAnalyzer initializeDatabaseAnalyzer(Map<String, Object> opts) {
     String jdbcUrl = getOpt(opts, "jdbc-url");
     String driver = getOpt(opts, "jdbc-driver");
     String username = getOpt(opts, "username");
     String password = getOpt(opts, "password");
+    String schema = getOpt(opts, "schema");
 
-    JDBCConfig config = null;
+    DatabaseAnalyzer analyzer = null;
     try {
-      config = new JDBCConfig(jdbcUrl, driver, username, password);
+      analyzer = new DatabaseAnalyzer(jdbcUrl, driver, username, password, schema);
     } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | SQLException e) {
       LOGGER.error("unable to configure database metadata.", e);
     }
-    return config;
+    return analyzer;
   }
 
+  @SuppressWarnings("SameParameterValue")
   private static boolean hasOpt(Map<String, Object> opts, String arg) {
-    return opts.containsKey("--"+arg);
+    boolean present = false;
+    if(opts.containsKey("--"+arg)) {
+      Object val = opts.get("--"+arg);
+      if(val != null) {
+        return Boolean.getBoolean(val.toString());
+      }
+    }
+    //noinspection ConstantConditions
+    return present;
   }
 
   private static String getOpt(Map<String, Object> opts, String arg) {
