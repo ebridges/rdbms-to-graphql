@@ -49,8 +49,11 @@ public class RdbmsToGraphQL {
     List<Entity> entities;
     try(DatabaseAnalyzer analyzer = initializeDatabaseAnalyzer(opts)) {
       entities = analyzer.initializeEntities(includedTables);
-      LOGGER.info("entities: "+ entities);
+      LOGGER.debug("entities: "+ entities);
     }
+
+    SchemaWriter writer = new SchemaWriter(getOpt(opts, "output-dir"));
+    writer.writeEntities(entities);
   }
 
   private static String[] initializeIncludedTables(Map<String, Object> opts) {
