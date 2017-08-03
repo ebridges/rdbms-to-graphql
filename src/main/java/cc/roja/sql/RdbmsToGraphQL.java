@@ -58,11 +58,7 @@ public class RdbmsToGraphQL {
 
   private static String[] initializeIncludedTables(Map<String, Object> opts) {
     String tableCsv = getOpt(opts, "tables");
-    if(tableCsv.equals("%")) {
-      return new String[]{};
-    } else {
-      return tableCsv.split("\\s*,\\s*");
-    }
+    return tableCsv.split("\\s*,\\s*");
   }
 
   private static DatabaseAnalyzer initializeDatabaseAnalyzer(Map<String, Object> opts) {
