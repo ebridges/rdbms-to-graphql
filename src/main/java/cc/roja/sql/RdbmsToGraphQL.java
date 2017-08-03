@@ -97,7 +97,7 @@ public class RdbmsToGraphQL {
   private static String getOpt(Map<String, Object> opts, String arg) {
     Object o = opts.get("--"+arg);
     if(o != null) {
-      return o.toString();
+      return o.toString().replaceAll("'", "");
     }
     throw new IllegalArgumentException("No param found for arg: "+arg);
   }
