@@ -1,6 +1,7 @@
 package cc.roja.sql.model;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -23,6 +24,13 @@ public class Entity {
 
   public Set<Attribute> getAttributes() {
     return Collections.unmodifiableSet(attributes);
+  }
+
+  public int maxPosition() {
+    return attributes.stream()
+        .max(Comparator.comparingInt(Attribute::getPosition))
+        .orElseThrow(() -> new IllegalStateException("null position found"))
+        .getPosition()+1;
   }
 
   @Override

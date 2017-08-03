@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,25 +59,25 @@ public class DatabaseAnalyzer implements AutoCloseable {
     }
   }
 
-  public List<Entity> initializeEntities(String ... tables) throws SQLException {
-    List<String> includedTables = Arrays.asList(tables);
+  public List<Entity> initializeEntities(String ... includedTables) throws SQLException {
     List<Entity> entities = new ArrayList<>();
-    try (ResultSet results = this.databaseMetadata.getTables(this.catalog, this.schema, "%", new String[] {"TABLE", "VIEW"})) {
-      while (results.next()) {
-        String tableName = results.getString("TABLE_NAME");
-        Entity entity = initializeEntity(tableName);
-        if(entity != null) {
-          LOGGER.debug(entity.toString());
-          entities.add(entity);
+    for(String table : includedTables) {
+      try (ResultSet results = this.databaseMetadata
+          .getTables(this.catalog, this.schema, table, new String[] {"TABLE", "VIEW"})) {
+        while (results.next()) {
+          String tableName = results.getString("TABLE_NAME");
+          Entity entity = initializeEntity(tableName);
+          if (entity != null) {
+            LOGGER.debug(entity.toString());
+            entities.add(entity);
+          }
         }
       }
     }
 
     initializeRelations(entities);
 
-    return entities.stream()
-        .filter(entity -> includedTables.contains(entity.getName()))
-        .collect(Collectors.toList());
+    return entities;
   }
 
   public Entity initializeEntity(String table) throws SQLException {
@@ -133,19 +134,25 @@ public class DatabaseAnalyzer implements AutoCloseable {
           Attribute fkAttribute = getMatchingAttribute(fkEntity.getAttributes(), fkColumn);
 
           LOGGER.debug(String.format("Relation: %s.%s (1) <- %s.%s (M)", pktable, pkColumn, fkTable, fkColumn));
-          // set "one" side of relation
-          for(Attribute a : pkEntity.getAttributes()) {
-            if(a.getName().equals(pkColumn)) {
-              Relation r = new Relation(fkEntity, fkAttribute, Cardinality.MANY);
-              a.setForeignKey(r);
-            }
+          // set "many" side of relation
+          {
+            TypeMap typeMap = TypeMapFactory.getTypeMap(databaseType, Types.ARRAY);
+            Attribute newAttribute = new Attribute(
+                fkEntity.getName().toLowerCase(),
+                pkEntity.maxPosition(),
+                typeMap,
+                false,
+                fkAttribute.isNullable());
+            Relation newRelation = new Relation(fkEntity, fkAttribute, Cardinality.MANY);
+            newAttribute.setForeignKey(newRelation);
+            pkEntity.addAttribute(newAttribute);
           }
 
-          // set "many" side of relation
+          // set "one" side of relation
           for(Attribute a : e.getAttributes()) {
             if(a.getName().equals(fkColumn)) {
-              Relation r = new Relation(pkEntity, pkAttribute, Cardinality.ONE);
-              a.setForeignKey(r);
+              Relation newRelation = new Relation(pkEntity, pkAttribute, Cardinality.ONE);
+              a.setForeignKey(newRelation);
             }
           }
         }

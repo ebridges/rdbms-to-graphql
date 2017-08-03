@@ -79,10 +79,9 @@ type Character {
 
     if(relation.getCardinality() == MANY) {
       type = format("[%s]", type);
-    }
-
-    if(!relation.getForeignAttribute().isNullable()) {
-      type += "!";
+      if(!relation.getForeignAttribute().isNullable()) {
+        type += "!";
+      }
     }
 
     return type;
