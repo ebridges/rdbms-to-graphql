@@ -44,7 +44,7 @@ type Character {
 
   public void writeEntity(BufferedWriter writer, Entity entity) throws IOException {
     String attributeString = formatAttributes(entity.getAttributes());
-    String entityString = format("type %s {\n%s\n}\n", entity.getName(), attributeString);
+    String entityString = format("type %s {\n%s}\n", entity.getName(), attributeString);
     writer.write(entityString);
   }
 
