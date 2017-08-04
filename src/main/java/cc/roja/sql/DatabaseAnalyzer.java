@@ -35,11 +35,7 @@ public class DatabaseAnalyzer implements AutoCloseable {
   private final String catalog;
   private final String schema;
 
-  public DatabaseAnalyzer(String jdbcUrl, String driver, String username, String password, String schema)
-      throws ClassNotFoundException, IllegalAccessException, InstantiationException, SQLException {
-    Class.forName(driver).newInstance();
-
-    Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+  public DatabaseAnalyzer(Connection connection, String schema) throws SQLException {
     this.databaseMetadata = connection.getMetaData();
     this.schema = schema;
     this.catalog = connection.getCatalog();

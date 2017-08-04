@@ -1,5 +1,8 @@
 package cc.roja.sql;
 
+import static cc.roja.sql.DatabaseConnection.connect;
+
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -70,8 +73,9 @@ public class RdbmsToGraphQL {
 
     DatabaseAnalyzer analyzer = null;
     try {
-      analyzer = new DatabaseAnalyzer(jdbcUrl, driver, username, password, schema);
-    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | SQLException e) {
+      Connection connection = connect(jdbcUrl, driver, username, password);
+      analyzer = new DatabaseAnalyzer(connection, schema);
+    } catch (SQLException e) {
       LOGGER.error("unable to configure database metadata.", e);
     }
     return analyzer;
