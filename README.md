@@ -1,3 +1,5 @@
+[![CircleCI Status](https://circleci.com/gh/ebridges/rdbms-to-graphql.svg?style=shield&circle-token=:circle-token)](https://circleci.com/gh/ebridges/rdbms-to-graphql)
+
 
 ## RDBMS to GraphQL
 
