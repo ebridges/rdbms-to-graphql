@@ -66,7 +66,7 @@ type Character {
       return formatRelationType(attribute);
     }
 
-    return attribute.getType().getAsGraphQLTypeString();
+    return attribute.getType();
   }
 
   private String formatRelationType(Attribute attribute) {

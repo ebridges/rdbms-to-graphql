@@ -1,11 +1,7 @@
 package cc.roja.sql.types;
 
 final class MySQLTypeMap extends TypeMapImpl {
-  MySQLTypeMap(int type) {
-    super(type);
-  }
-
-  public String getAsGraphQLTypeString() {
+  public String getAsGraphQLTypeString(int sqlType) {
     return sqlTypeToGraphQLTypeString(sqlType);
   }
 }

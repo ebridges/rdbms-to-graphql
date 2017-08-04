@@ -1,11 +1,7 @@
 package cc.roja.sql.types;
 
 final class PostgresTypeMap extends TypeMapImpl {
-  PostgresTypeMap(int type) {
-    super(type);
-  }
-
-  public String getAsGraphQLTypeString() {
+  public String getAsGraphQLTypeString(int sqlType) {
     return sqlTypeToGraphQLTypeString(sqlType);
   }
 }

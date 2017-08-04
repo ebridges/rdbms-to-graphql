@@ -4,17 +4,6 @@ import java.sql.Types;
 
 @SuppressWarnings("WeakerAccess")
 abstract class TypeMapImpl implements TypeMap {
-
-  protected int sqlType;
-
-  TypeMapImpl(int type) {
-    this.sqlType = type;
-  }
-
-  public int getSqlType() {
-    return sqlType;
-  }
-
   protected static String sqlTypeToGraphQLTypeString(int dataType) {
     String typeString;
     switch (dataType) {

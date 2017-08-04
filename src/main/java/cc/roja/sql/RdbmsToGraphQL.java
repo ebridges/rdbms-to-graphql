@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cc.roja.sql.model.Entity;
+import cc.roja.sql.types.TypeMap;
 
 public class RdbmsToGraphQL {
   private static final Logger LOGGER = LoggerFactory.getLogger(RdbmsToGraphQL.class);
@@ -74,7 +75,8 @@ public class RdbmsToGraphQL {
     DatabaseAnalyzer analyzer = null;
     try {
       Connection connection = connect(jdbcUrl, driver, username, password);
-      analyzer = new DatabaseAnalyzer(connection, schema);
+      TypeMap typeMap = DatabaseConnection.getTypeMap(connection);
+      analyzer = new DatabaseAnalyzer(connection, schema, typeMap);
     } catch (SQLException e) {
       LOGGER.error("unable to configure database metadata.", e);
     }

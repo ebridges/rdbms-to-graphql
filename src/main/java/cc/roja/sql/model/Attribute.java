@@ -5,12 +5,12 @@ import cc.roja.sql.types.TypeMap;
 public class Attribute implements Comparable<Attribute> {
   private final String name;
   private final int position;
-  private final TypeMap type;
+  private final String type;
   private final boolean isPrimaryKey;
   private final boolean isNullable;
   private Relation foreignKey;
 
-  public Attribute(String name, int position, TypeMap type, boolean isPrimaryKey, boolean isNullable) {
+  public Attribute(String name, int position, String type, boolean isPrimaryKey, boolean isNullable) {
     this.name = name;
     this.position = position;
     this.type = type;
@@ -26,7 +26,7 @@ public class Attribute implements Comparable<Attribute> {
     return position;
   }
 
-  public TypeMap getType() {
+  public String getType() {
     return type;
   }
 

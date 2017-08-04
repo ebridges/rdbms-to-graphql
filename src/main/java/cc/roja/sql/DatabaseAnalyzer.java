@@ -2,18 +2,15 @@ package cc.roja.sql;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +20,6 @@ import cc.roja.sql.model.Cardinality;
 import cc.roja.sql.model.Entity;
 import cc.roja.sql.model.Relation;
 import cc.roja.sql.types.TypeMap;
-import cc.roja.sql.types.TypeMapFactory;
 
 @SuppressWarnings("WeakerAccess")
 public class DatabaseAnalyzer implements AutoCloseable {
@@ -31,15 +27,15 @@ public class DatabaseAnalyzer implements AutoCloseable {
 
   private final DatabaseMetaData databaseMetadata;
 
-  private final String databaseType;
   private final String catalog;
   private final String schema;
+  private final TypeMap typeMap;
 
-  public DatabaseAnalyzer(Connection connection, String schema) throws SQLException {
+  public DatabaseAnalyzer(Connection connection, String schema, TypeMap typeMap) throws SQLException {
     this.databaseMetadata = connection.getMetaData();
     this.schema = schema;
     this.catalog = connection.getCatalog();
-    this.databaseType = this.databaseMetadata.getDatabaseProductName();
+    this.typeMap = typeMap;
   }
 
   @Override
@@ -103,11 +99,11 @@ public class DatabaseAnalyzer implements AutoCloseable {
     String name = results.getString("COLUMN_NAME");
     int position = results.getInt("ORDINAL_POSITION");
     int dataType = results.getInt("DATA_TYPE");
-    TypeMap typeMap = TypeMapFactory.getTypeMap(databaseType, dataType);
+    String type = this.typeMap.getAsGraphQLTypeString(dataType);
     boolean isNullable = results.getInt("NULLABLE") == 1;
     boolean isPrimaryKey = primaryKeys.contains(name);
 
-    return new Attribute(name, position, typeMap, isPrimaryKey, isNullable);
+    return new Attribute(name, position, type, isPrimaryKey, isNullable);
   }
 
 
@@ -132,11 +128,11 @@ public class DatabaseAnalyzer implements AutoCloseable {
           LOGGER.debug(String.format("Relation: %s.%s (1) <- %s.%s (M)", pktable, pkColumn, fkTable, fkColumn));
           // set "many" side of relation
           {
-            TypeMap typeMap = TypeMapFactory.getTypeMap(databaseType, Types.ARRAY);
+            String type = typeMap.getAsGraphQLTypeString(Types.ARRAY);
             Attribute newAttribute = new Attribute(
                 fkEntity.getName().toLowerCase(),
                 pkEntity.maxPosition(),
-                typeMap,
+                type,
                 false,
                 fkAttribute.isNullable());
             Relation newRelation = new Relation(fkEntity, fkAttribute, Cardinality.MANY);
