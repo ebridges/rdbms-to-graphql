@@ -67,7 +67,8 @@ public class DatabaseAnalyzer implements AutoCloseable {
       }
     }
 
-    initializeRelations(entities);
+    Map<String, Entity> entityMap = initializeEntityMap(entities);
+    initializeRelations(entityMap);
 
     return entities;
   }
@@ -107,9 +108,8 @@ public class DatabaseAnalyzer implements AutoCloseable {
   }
 
 
-  private void initializeRelations(List<Entity> entities) throws SQLException {
-    Map<String, Entity> entityMap = initializeEntityMap(entities);
-    for(Entity e : entities) {
+  private void initializeRelations(Map<String, Entity> entityMap) throws SQLException {
+    for(Entity e : entityMap.values()) {
       try(ResultSet results = this.databaseMetadata.getImportedKeys(catalog, schema, e.getName())) {
         LOGGER.debug("Loading imported keys for table: "+e.getName());
         while(results.next()) {
