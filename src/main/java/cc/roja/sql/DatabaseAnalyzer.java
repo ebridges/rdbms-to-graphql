@@ -96,7 +96,7 @@ public class DatabaseAnalyzer implements AutoCloseable {
     return entity;
   }
 
-  private Attribute initializeAttribute(ResultSet results, List<String> primaryKeys) throws SQLException {
+  public Attribute initializeAttribute(ResultSet results, List<String> primaryKeys) throws SQLException {
     String name = results.getString("COLUMN_NAME");
     int position = results.getInt("ORDINAL_POSITION");
     int dataType = results.getInt("DATA_TYPE");

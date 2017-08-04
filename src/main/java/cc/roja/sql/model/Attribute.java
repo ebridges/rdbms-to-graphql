@@ -1,5 +1,7 @@
 package cc.roja.sql.model;
 
+import java.util.Objects;
+
 import cc.roja.sql.types.TypeMap;
 
 public class Attribute implements Comparable<Attribute> {
@@ -61,5 +63,27 @@ public class Attribute implements Comparable<Attribute> {
         ", isNullable=" + isNullable +
         ", foreignKey=" + foreignKey +
         '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Attribute attribute = (Attribute) o;
+    return position == attribute.position &&
+        isPrimaryKey == attribute.isPrimaryKey &&
+        isNullable == attribute.isNullable &&
+        Objects.equals(name, attribute.name) &&
+        Objects.equals(type, attribute.type) &&
+        Objects.equals(foreignKey, attribute.foreignKey);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, position, type, isPrimaryKey, isNullable, foreignKey);
   }
 }
