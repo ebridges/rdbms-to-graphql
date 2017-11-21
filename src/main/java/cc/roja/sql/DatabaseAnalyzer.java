@@ -52,6 +52,7 @@ public class DatabaseAnalyzer implements AutoCloseable {
   }
 
   public List<Entity> initializeEntities(String ... includedTables) throws SQLException {
+    // initialize a list of entities from the tables in the database
     List<Entity> entities = new ArrayList<>();
     for(String table : includedTables) {
       try (ResultSet results = this.databaseMetadata
@@ -67,8 +68,16 @@ public class DatabaseAnalyzer implements AutoCloseable {
       }
     }
 
+    // initialize relationships among all of the entities from FK relationships
     Map<String, Entity> entityMap = initializeEntityMap(entities);
-    initializeRelations(entityMap);
+    for(Entity entity : entityMap.values()) {
+      try (ResultSet results = this.databaseMetadata.getImportedKeys(catalog, schema, entity.getName())) {
+        LOGGER.debug("Loading imported keys for table: " + entity.getName());
+        while (results.next()) {
+          initializeRelations(entity, results, entityMap);
+        }
+      }
+    }
 
     return entities;
   }
@@ -107,46 +116,38 @@ public class DatabaseAnalyzer implements AutoCloseable {
     return new Attribute(name, position, type, isPrimaryKey, isNullable);
   }
 
+  public void initializeRelations(Entity e, ResultSet results, Map<String, Entity> entityMap) throws SQLException {
+    String pktable = results.getString("PKTABLE_NAME");
+    String pkColumn = results.getString("PKCOLUMN_NAME");
+    String fkTable = results.getString("FKTABLE_NAME");
+    String fkColumn = results.getString("FKCOLUMN_NAME");
 
-  private void initializeRelations(Map<String, Entity> entityMap) throws SQLException {
-    for(Entity e : entityMap.values()) {
-      try(ResultSet results = this.databaseMetadata.getImportedKeys(catalog, schema, e.getName())) {
-        LOGGER.debug("Loading imported keys for table: "+e.getName());
-        while(results.next()) {
-          String pktable = results.getString("PKTABLE_NAME");
-          String pkColumn = results.getString("PKCOLUMN_NAME");
-          String fkTable = results.getString("FKTABLE_NAME");
-          String fkColumn = results.getString("FKCOLUMN_NAME");
+    Entity pkEntity = entityMap.get(pktable);
+    Attribute pkAttribute = getMatchingAttribute(pkEntity.getAttributes(), pkColumn);
 
-          Entity pkEntity = entityMap.get(pktable);
-          Attribute pkAttribute = getMatchingAttribute(pkEntity.getAttributes(), pkColumn);
+    Entity fkEntity = entityMap.get(fkTable);
+    Attribute fkAttribute = getMatchingAttribute(fkEntity.getAttributes(), fkColumn);
 
-          Entity fkEntity = entityMap.get(fkTable);
-          Attribute fkAttribute = getMatchingAttribute(fkEntity.getAttributes(), fkColumn);
+    LOGGER.debug(String.format("Relation: %s.%s (1) <- %s.%s (M)", pktable, pkColumn, fkTable, fkColumn));
+    // set "many" side of relation
+    {
+      String type = typeMap.getAsGraphQLTypeString(Types.ARRAY);
+      Attribute newAttribute = new Attribute(
+          fkEntity.getName().toLowerCase(),
+          pkEntity.maxPosition(),
+          type,
+          false,
+          fkAttribute.isNullable());
+      Relation newRelation = new Relation(fkEntity, fkAttribute, Cardinality.MANY);
+      newAttribute.setForeignKey(newRelation);
+      pkEntity.addAttribute(newAttribute);
+    }
 
-          LOGGER.debug(String.format("Relation: %s.%s (1) <- %s.%s (M)", pktable, pkColumn, fkTable, fkColumn));
-          // set "many" side of relation
-          {
-            String type = typeMap.getAsGraphQLTypeString(Types.ARRAY);
-            Attribute newAttribute = new Attribute(
-                fkEntity.getName().toLowerCase(),
-                pkEntity.maxPosition(),
-                type,
-                false,
-                fkAttribute.isNullable());
-            Relation newRelation = new Relation(fkEntity, fkAttribute, Cardinality.MANY);
-            newAttribute.setForeignKey(newRelation);
-            pkEntity.addAttribute(newAttribute);
-          }
-
-          // set "one" side of relation
-          for(Attribute a : e.getAttributes()) {
-            if(a.getName().equals(fkColumn)) {
-              Relation newRelation = new Relation(pkEntity, pkAttribute, Cardinality.ONE);
-              a.setForeignKey(newRelation);
-            }
-          }
-        }
+    // set "one" side of relation
+    for(Attribute a : e.getAttributes()) {
+      if(a.getName().equals(fkColumn)) {
+        Relation newRelation = new Relation(pkEntity, pkAttribute, Cardinality.ONE);
+        a.setForeignKey(newRelation);
       }
     }
   }
