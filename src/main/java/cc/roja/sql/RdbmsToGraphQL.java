@@ -89,7 +89,7 @@ public class RdbmsToGraphQL {
     if(opts.containsKey("--"+arg)) {
       Object val = opts.get("--"+arg);
       if(val != null) {
-        return Boolean.getBoolean(val.toString());
+        return true;
       }
     }
     //noinspection ConstantConditions
