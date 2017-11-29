@@ -8,6 +8,7 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +24,10 @@ public class SchemaWriter {
   private final String outputDir;
 
   public SchemaWriter(String outputDir) {
+    File file = new File(outputDir);
+    if(!file.exists() && !file.mkdirs()) {
+      throw new IllegalArgumentException("unable to create output directory.");
+    }
     this.outputDir = outputDir;
   }
 
