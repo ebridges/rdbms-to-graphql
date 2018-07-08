@@ -38,3 +38,6 @@ distZip.enabled = false
 task deleteZip {
     configurations.archives.artifacts.removeAll {it.file =~ 'zip'}
 }
+
+// remove lingering `*.tar` && `*.jar` archives
+configurations.archives.artifacts.removeAll {it.file =~ 'tar' || it.file =~ 'jar'}
