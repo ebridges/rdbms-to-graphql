@@ -1,7 +1,12 @@
+plugins {
+    id 'net.researchgate.release' version '2.6.0'
+}
+
 group 'cc.roja'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'maven'
 apply plugin: 'application'
 
 mainClassName = 'cc.roja.sql.RdbmsToGraphQL'
@@ -11,6 +16,12 @@ sourceCompatibility = 1.8
 repositories {
     mavenCentral()
     maven { url 'https://jitpack.io' }
+}
+
+release {
+    git {
+        signTag = true
+    }
 }
 
 dependencies {
