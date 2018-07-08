@@ -1,13 +1,27 @@
+plugins {
+    id 'net.researchgate.release' version '2.6.0'
+}
+
 group 'cc.roja'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'application'
+
+mainClassName = 'cc.roja.sql.RdbmsToGraphQL'
 
 sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
     maven { url 'https://jitpack.io' }
+}
+
+release {
+    git {
+        signTag = true
+    }
 }
 
 dependencies {
@@ -17,5 +31,24 @@ dependencies {
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.8.47'
     testCompile group: 'junit', name: 'junit', version: '4.12'
-
 }
+
+distTar {
+    compression = Compression.GZIP
+}
+
+// don't include the windows `*.bat` file
+startScripts {
+    doLast {
+        delete windowsScript
+    }
+}
+
+// don't include the `*.zip` archives
+distZip.enabled = false
+task deleteZip {
+    configurations.archives.artifacts.removeAll {it.file =~ 'zip'}
+}
+
+// remove lingering `*.tar` && `*.jar` archives
+configurations.archives.artifacts.removeAll {it.file =~ 'tar' || it.file =~ 'jar'}
